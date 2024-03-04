@@ -8,12 +8,11 @@ import wandb
 import argparse
 
 import sys
-sys.path.insert(0, './GPT2ForwardBackward')
 
 import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('averaged_perceptron_tagger')
+# nltk.download('punkt')
+# nltk.download('stopwords')
+# nltk.download('averaged_perceptron_tagger')
 
 from nltk import tokenize
 from nltk.corpus import stopwords
@@ -22,7 +21,7 @@ from nltk.tokenize import word_tokenize
 from util import *
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from bleuloss import batch_log_bleulosscnn_ae
-from modeling_opengpt2 import OpenGPT2LMHeadModel
+from GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
 
 stop_words = set(stopwords.words('english'))
 
@@ -49,7 +48,7 @@ def options():
     parser.add_argument("--fwd-model", type=str,
                         default="/var/karen/workspace/GPT2ForwardBackward/opengpt2_pytorch_forward")
     parser.add_argument("--back-model", type=str,
-                        default="danyaljj/opengpt2_pytorch_backward")
+                        default="/data1/wujialong/models/gpt2-backward")
     parser.add_argument("--version", type=str, default="")
     parser.add_argument("--start", type=int, default=1, help="loading data from ith examples.")
     parser.add_argument("--end", type=int, default=10, help="loading data util ith examples.")
@@ -305,7 +304,6 @@ def decode(model, tokenizer, device, x="", z="", constraints=None, args=None, mo
                 z_logits,
                 z_t.view(-1))
             c_loss_1 = c_loss_1.view(args.batch_size, -1).mean(-1)
-
             c_loss_2 = batch_log_bleulosscnn_ae(
                 decoder_outputs=y_logits_.transpose(0, 1),
                 target_idx=zz_t,
@@ -375,7 +373,7 @@ def decode(model, tokenizer, device, x="", z="", constraints=None, args=None, mo
                     noise_std = large_gs_stds[ni]
 
                 noise = torch.normal(mean=args.gs_mean, std=noise_std, size=epsilon.size(),
-                                     device='cuda', requires_grad=False)
+                                     device='cuda:2', requires_grad=False)
                 if args.win_anneal_iters >= 0 and iter >= args.win_anneal_iters:
                     zeros = torch.zeros_like(noise)
                     noise_mix = torch.cat([zeros[:, :frozen_len], noise[:, frozen_len:]], dim=1)
@@ -758,8 +756,7 @@ def lexical_generation(model, tokenizer, device, args, model_back=None):
 
 def main():
     args = options()
-    device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
-
+    device = "cuda:2" if torch.cuda.is_available() and not args.no_cuda else "cpu"
     if args.seed != -1:
         torch.manual_seed(args.seed)
         np.random.seed(args.seed)

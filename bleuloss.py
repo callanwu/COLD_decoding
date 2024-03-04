@@ -19,7 +19,7 @@ def batch_log_bleulosscnn_ae(decoder_outputs, target_idx, ngram_list, trans_len=
 
     NOTE: output_len == target_len
     """
-    decoder_outputs = decoder_outputs.transpose(0,1)
+    decoder_outputs = decoder_outputs.transpose(0, 1)
     batch_size, output_len, vocab_size = decoder_outputs.size()
     _, tgt_len = target_idx.size()
     if type(ngram_list) == int:
@@ -28,22 +28,24 @@ def batch_log_bleulosscnn_ae(decoder_outputs, target_idx, ngram_list, trans_len=
         ngram_list[0] = output_len
     if weight_list is None:
         weight_list = [1. / len(ngram_list)] * len(ngram_list)
-    decoder_outputs = torch.log_softmax(decoder_outputs,dim=-1)
+    decoder_outputs = torch.log_softmax(decoder_outputs, dim=-1)
     decoder_outputs = torch.relu(decoder_outputs + 20) - 20
     index = target_idx.unsqueeze(1).expand(-1, output_len, tgt_len)
     cost_nll = decoder_outputs.gather(dim=2, index=index)
     cost_nll = cost_nll.unsqueeze(1)
     out = cost_nll
-    sum_gram = 0. #FloatTensor([0.])
+    sum_gram = 0.  # FloatTensor([0.])
 ###########################
-    zero = torch.tensor(0.0).cuda()
-    target_expand = target_idx.view(batch_size,1,1,-1).expand(-1,-1,output_len,-1)
-    out = torch.where(target_expand==pad, zero, out)
+    zero = torch.tensor(0.0).to("cuda:2")
+    target_expand = target_idx.view(
+        batch_size, 1, 1, -1).expand(-1, -1, output_len, -1)
+    out = torch.where(target_expand == pad, zero, out)
 ############################
     for cnt, ngram in enumerate(ngram_list):
         if ngram > output_len:
             continue
-        eye_filter = torch.eye(ngram).view([1, 1, ngram, ngram]).cuda()
+        eye_filter = torch.eye(ngram).view(
+            [1, 1, ngram, ngram]).to("cuda:2")
         term = nn.functional.conv2d(out, eye_filter)/ngram
         if ngram < decoder_outputs.size()[1]:
             term = term.squeeze(1)
@@ -65,4 +67,3 @@ def batch_log_bleulosscnn_ae(decoder_outputs, target_idx, ngram_list, trans_len=
 
     loss = - sum_gram
     return loss
-

@@ -5,7 +5,7 @@
 python3 cold_decoding.py \
 	--seed 12 \
 	--mode lexical_generation \
-	--pretrained_model gpt2-xl  \
+	--pretrained_model /data1/wujialong/models/gpt2-xl  \
 	--init-temp 1 \
     --length 10 \
 	--max-length 40 \
@@ -26,7 +26,7 @@ python3 cold_decoding.py \
 	--large-noise-iters 50,500,1000,1500 \
 	--large_gs_std 1,0.5,0.1,0.05  \
 	--stepsize-ratio 1  \
-    --batch-size 32 \
+    --batch-size 1 \
     --repeat-batch 8 \
     --print-every 200 \
     --input-file "./data/commongen/commongen.dev.jsonl" \
